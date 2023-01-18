@@ -1,0 +1,124 @@
+version: '3'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  broker:
+    image: confluentinc/cp-server:7.0.1
+    hostname: broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
+      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
+      CONFLUENT_METRICS_ENABLE: 'true'
+      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.0.1
+    hostname: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    hostname: SQLSERVER
+    deploy:
+        resources:
+            limits:
+                memory: 2G
+            reservations:
+                memory: 1G
+    environment: 
+        ACCEPT_EULA: y
+        SA_PASSWORD: MyS@P@ssw0rd
+    ports:
+        - "1433:1433"
+    volumes:
+        - mssql:/var/opt/mssql
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - '4566-4597:4566-4597'
+    environment:
+      - DEFAULT_REGION=eu-west-1
+      - SERVICES=sqs, nsn
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  aws_cli:
+    image: amazon/aws-cli
+    depends_on: 
+      - localstack
+    entrypoint: /bin/sh -c
+    command: >  
+     '
+     COUNTER=15;
+     SQS_DESIRED_STATE="sqs available";
+     SERVICE_ACTUAL_STATE=0;
+     
+      while [ $$COUNTER -ne 0 ] && [ $$SERVICE_ACTUAL_STATE != 1 ]
+      
+      do 
+      RESPONSE=$$(curl -sb --connect-timeout 2 /dev/null "localstack:4566/health?redirect" | tr -cd [^[:alnum:][:space:]]+) 
+      echo " Response from Localstack $$RESPONSE";
+
+      if [[ $$RESPONSE == *"$$SQS_DESIRED_STATE"* ]]; then SERVICE_ACTUAL_STATE=1; else SERVICE_ACTUAL_STATE=0; fi;
+      
+      COUNTER=$$((COUNTER-1)); 
+      echo "Service is not ready yet! $$COUNTER retries left."; 
+      sleep 3; 
+      done; 
+      echo backend is up;
+
+      echo "########### Creating profile ###########"
+
+      aws configure set aws_access_key_id test --profile=default
+      aws configure set aws_secret_access_key test --profile=default
+      aws configure set region eu-west-1 --profile=default
+
+      echo "########### Listing profile ###########"
+      aws configure list --profile=default
+
+      echo "########### Creating SQS ###########"
+      aws sqs create-queue --endpoint-url=http://localstack:4566 --queue-name=order-saga --profile=default
+
+      echo "########### Listing SQS ###########"
+      aws sqs list-queues --endpoint-url=http://localstack:4566 --profile=default
+
+      '
+
+volumes:
+    mssql:
+    localstack:
