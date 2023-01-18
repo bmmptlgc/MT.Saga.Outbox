@@ -2,7 +2,7 @@
 Saga Outbox with SNS and Kafka events and SQS commands
 
 ## Problem statement
-The Order saga is executing well and in the end the OrderState (saga table) records are deleted for each saga instance that finishes. However, the events that the saga consumes from SNS are not writting to the InboxState table. Therefore, no MessageOutbox records are inserted when an event is consumed and a corresponding command sent out by the saga. Essencially, the outbox is only working, under this senario, for events consumed from Kafka. It would be desirable if the inbox/outbox was used for the SNS events as well.
+The Order saga is executing well and in the end the OrderState (saga table) records are deleted for each saga instance that finishes. However, no MessageOutbox records are inserted when an SNS event is consumed and a corresponding command sent out by the saga. Essencially, the outbox is only working, under this senario, for events consumed from Kafka. It would be desirable if the inbox/outbox was used for the SNS events as well.
 
 ## Requirements
 - Docker
