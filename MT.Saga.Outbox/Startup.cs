@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
 using MT.Contracts.Commands.Product;
 using MT.Contracts.Events.Order;
+using MT.Contracts.Events.Product;
 using MT.Saga.Outbox.Domain;
 using MT.Saga.Outbox.Domain.Persistence;
 using ClientConfig = Amazon.Runtime.ClientConfig;
@@ -30,6 +31,14 @@ namespace MT.Saga.Outbox
                 })
                 .AddMassTransit(busConfig =>
                 {
+                    busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
+                        .EntityFrameworkRepository(r =>
+                        {
+                            r.ConcurrencyMode = ConcurrencyMode.Optimistic;
+                            r.ExistingDbContext<OrderDbContext>();
+                            r.UseSqlServer();
+                        });
+
                     busConfig.AddEntityFrameworkOutbox<OrderDbContext>(o =>
                     {
                         o.UseSqlServer();
@@ -65,8 +74,8 @@ namespace MT.Saga.Outbox
                         amazonSqsConfig.ReceiveEndpoint(sqsQueueName, e =>
                         {
                             e.Subscribe("product-events");
-
-                            e.StateMachineSaga<OrderState>(context);
+                            //e.StateMachineSaga<OrderState>(context);
+                            e.ConfigureSaga<OrderState>(context);
                         });
 
                         amazonSqsConfig.ConfigureEndpoints(context);
