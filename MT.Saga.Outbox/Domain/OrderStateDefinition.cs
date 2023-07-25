@@ -23,7 +23,12 @@ namespace MT.Saga.Outbox.Domain
             sagaConfigurator.Message<ProductSold>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
             sagaConfigurator.Message<OrderCompleted>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
 
-            endpointConfigurator.UseMessageRetry(r => r.Intervals(20, 50, 100, 1000, 5000));
+            endpointConfigurator.UseMessageRetry(r =>
+            {
+                r.Ignore<InvalidOperationException>(e => e.Message.Equals("Lgc-MessageId header is required and must be a valid guid"));
+                
+                r.Intervals(20, 50, 100, 1000, 5000);
+            });
 
             endpointConfigurator.UseEntityFrameworkOutbox<OrderDbContext>(_provider);
         }

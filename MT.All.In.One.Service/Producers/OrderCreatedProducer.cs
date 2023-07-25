@@ -31,10 +31,10 @@ namespace MT.All.In.One.Service.Producers
 
         private static async Task Produce(ITopicProducer<OrderCreated> producer, CancellationToken stoppingToken)
         {
-            async Task ProduceMessage<TOrderCreated>(object value) => 
+            async Task ProduceMessage(object value) => 
                 await producer.Produce(value, stoppingToken);
 
-            await ProduceMessage<OrderCreated>(new
+            await ProduceMessage(new
             {
                 __MyMessageId = Guid.NewGuid(),
                 OrderId = Guid.NewGuid(),

@@ -54,7 +54,7 @@ namespace MT.All.In.One.Service
 
                     riderConfig.UsingKafka((_, kafkaConfig) =>
                     {
-                        kafkaConfig.Host(new List<string>() { "localhost:9092" });
+                        kafkaConfig.Host(new List<string>() { "localhost:19092" });
                     });
                 });
             });

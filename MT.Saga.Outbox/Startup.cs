@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
 using MT.Contracts.Commands.Product;
 using MT.Contracts.Events.Order;
-using MT.Contracts.Events.Product;
 using MT.Saga.Outbox.Domain;
 using MT.Saga.Outbox.Domain.Persistence;
+using MT.Saga.Outbox.Filters;
 using ClientConfig = Amazon.Runtime.ClientConfig;
 using RegionEndpoint = Amazon.RegionEndpoint;
 
@@ -46,6 +46,14 @@ namespace MT.Saga.Outbox
                         o.UseBusOutbox();
                     });
 
+                    busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
+                        .EntityFrameworkRepository(r =>
+                        {
+                            r.ConcurrencyMode = ConcurrencyMode.Optimistic;
+                            r.ExistingDbContext<OrderDbContext>();
+                            r.UseSqlServer();
+                        });
+                    
                     busConfig.UsingAmazonSqs((context, amazonSqsConfig) =>
                     {
                         amazonSqsConfig.Host("eu-west-1", h =>
@@ -74,11 +82,9 @@ namespace MT.Saga.Outbox
                         amazonSqsConfig.ReceiveEndpoint(sqsQueueName, e =>
                         {
                             e.Subscribe("product-events");
-                            //e.StateMachineSaga<OrderState>(context);
+
                             e.ConfigureSaga<OrderState>(context);
                         });
-
-                        amazonSqsConfig.ConfigureEndpoints(context);
                     });
 
                     busConfig.AddRider(riderConfig =>
@@ -93,7 +99,7 @@ namespace MT.Saga.Outbox
 
                         riderConfig.UsingKafka((riderContext, kafkaConfig) =>
                         {
-                            kafkaConfig.Host(new List<string>() { "localhost:9092" });
+                            kafkaConfig.Host(new List<string>() { "localhost:19092" });
 
                             kafkaConfig.TopicEndpoint<OrderCreated>(
                                 nameof(OrderCreated),
@@ -102,6 +108,7 @@ namespace MT.Saga.Outbox
                                 {
                                     topicConfig.CreateIfMissing();
                                     topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                                    topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
                                 });
 
@@ -112,6 +119,7 @@ namespace MT.Saga.Outbox
                                 {
                                     topicConfig.CreateIfMissing();
                                     topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                                    topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
                                 });
                         });

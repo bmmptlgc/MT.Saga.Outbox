@@ -1,57 +1,91 @@
-version: '3'
+version: '3.7'
+
+x-kafka-defaults: &kafka-defaults
+  image: confluentinc/cp-kafka:6.2.7
+  depends_on:
+    - zookeeper
+
+x-kafka-environment-defaults: &kafka-environment-defaults
+  KAFKA_ZOOKEEPER_CONNECT: 'zookeeper-a:2281'
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+  KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+  KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+  KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+  KAFKA_TOOLS_LOG4J_LOGLEVEL: ERROR
+  KAFKA_LOG4J_LOGGERS: "org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR,kafka.controller=WARN,kafka.foo.bar=DEBUG"
+  KAFKA_NUM_PARTITIONS: 1
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  
 services:
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    hostname: zookeeper
+  zookeeper-a:
+    image: confluentinc/cp-zookeeper:6.2.7
+    hostname: zookeeper-a
+    container_name: zookeeper-a
     ports:
-      - "2181:2181"
+      - "2281:2181"
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_CLIENT_PORT: 2281
       ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: [ "CMD", "jps -l | grep zookeeper-a" ]
+      interval: 30s
+      timeout: 3s
+      retries: 5
 
-  broker:
-    image: confluentinc/cp-server:7.0.1
-    hostname: broker
+  kafka-a:
+    <<: *kafka-defaults
+    hostname: kafka-a
+    container_name: kafka-a
     depends_on:
-      - zookeeper
+      - zookeeper-a
+    healthcheck:
+      test: [ "CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
     ports:
-      - "9092:9092"
-      - "9101:9101"
+      - "19092:19092"
     environment:
+      <<: *kafka-environment-defaults
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
-      KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-a:9092,PLAINTEXT_HOST://localhost:19092
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.0.1
-    hostname: schema-registry
+  schema-registry-a:
+    image: confluentinc/cp-schema-registry:6.2.7
+    hostname: schema-registry-a
+    container_name: schema-registry-a
     depends_on:
-      - broker
+      - kafka-a
     ports:
-      - "8081:8081"
+      - "8083:8081"
     environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-      
-  sqlserver:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry-a
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka-a:9092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8083
+      SCHEMA_REGISTRY_DEBUG: 'true'
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: backward_transitive
+
+  kafka-ui-a:
+    hostname: kafka-ui-a
+    container_name: kafka-ui-a
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8082:8080
+    depends_on:
+      - kafka-a
+      - schema-registry-a
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-a:9092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry-a:8083
+
+  sqlserver-a:
     image: mcr.microsoft.com/mssql/server:2019-latest
-    hostname: SQLSERVER
+    hostname: SQLSERVER-a
     deploy:
         resources:
             limits:
