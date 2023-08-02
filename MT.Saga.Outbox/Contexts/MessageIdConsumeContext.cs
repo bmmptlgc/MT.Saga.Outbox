@@ -12,7 +12,7 @@ namespace MT.Saga.Outbox.Contexts
         {
             if (context.Headers.TryGetHeader("Lgc-MessageId", out var headerMessageId))
             {
-                if (Guid.TryParse(headerMessageId?.ToString(), out var messageId))
+                if (Guid.TryParse(headerMessageId.ToString(), out var messageId))
                 {
                     MessageId = messageId;
                 }
