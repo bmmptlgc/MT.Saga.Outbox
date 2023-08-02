@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Apache.Avro" Version="1.11.2" />
     <PackageReference Include="Confluent.Kafka" Version="2.1.0" />
+    <PackageReference Include="LetsGetChecked.Event" Version="5.1.267" />
     <PackageReference Include="MassTransit" Version="8.0.16" />
     <PackageReference Include="MassTransit.Abstractions" Version="8.0.16" />
     <PackageReference Include="MassTransit.AmazonSQS" Version="8.0.16" />

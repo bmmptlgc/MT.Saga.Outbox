@@ -19,7 +19,7 @@ namespace MT.All.In.One.Service.Producers
             try
             {
                 using var scope = _serviceScopeFactory.CreateScope();
-                var producer = scope.ServiceProvider.GetService<ITopicProducer<OrderCreated>>();
+                var producer = scope.ServiceProvider.GetService<ITopicProducer<Guid, OrderCreated>>();
                 if (producer == null) throw new OperationCanceledException();
                 await Produce(producer, stoppingToken);
             }
@@ -29,18 +29,27 @@ namespace MT.All.In.One.Service.Producers
             }
         }
 
-        private static async Task Produce(ITopicProducer<OrderCreated> producer, CancellationToken stoppingToken)
+        private static async Task Produce(ITopicProducer<Guid, OrderCreated> producer, CancellationToken stoppingToken)
         {
-            async Task ProduceMessage(object value) => 
-                await producer.Produce(value, stoppingToken);
+            async Task ProduceMessage(Guid key, object value) => 
+                await producer.Produce(
+                    key,
+                    value,
+                    Pipe.Execute<SendContext>(context =>
+                    {
+                        context.Headers.Set("Lgc-MessageType", typeof(OrderCreated).FullName);
+                    }),
+                    stoppingToken);
 
-            await ProduceMessage(new
-            {
-                __MyMessageId = Guid.NewGuid(),
-                OrderId = Guid.NewGuid(),
-                ProductId = Guid.NewGuid(),
-                Quantity = 3
-            });
+            await ProduceMessage(
+                Guid.NewGuid(),
+                new {
+                    Source = "MT.Outbox",
+                    SourceId = "MT.Outbox",
+                    OrderId = Guid.NewGuid(),
+                    ProductId = Guid.NewGuid(),
+                    Quantity = 3
+                });
         }
     }
 }

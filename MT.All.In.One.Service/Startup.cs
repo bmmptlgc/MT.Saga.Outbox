@@ -1,6 +1,8 @@
 ﻿using Amazon.Runtime;
 using Amazon.SimpleNotificationService;
 using Amazon.SQS;
+using Confluent.SchemaRegistry;
+using Confluent.SchemaRegistry.Serdes;
 using MassTransit;
 using MT.All.In.One.Service.Consumers;
 using MT.All.In.One.Service.Producers;
@@ -19,7 +21,24 @@ namespace MT.All.In.One.Service
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMassTransit(x =>
+            var schemaRegistry = new SchemaRegistryConfig
+            {
+                Url = "localhost:8081"
+            };
+
+            var schemaRegistryClient = new CachedSchemaRegistryClient(schemaRegistry);
+            
+            services
+            //     .AddSingleton(c =>
+            // {
+            //     var schemaRegistry = new SchemaRegistryConfig
+            //     {
+            //         Url = "localhost:8081"
+            //     };
+            //
+            //     return new CachedSchemaRegistryClient(schemaRegistry);
+            // })
+                .AddMassTransit(x =>
             {
                 x.AddConsumer<CompleteOrderConsumer>();
 
@@ -49,8 +68,16 @@ namespace MT.All.In.One.Service
 
                 x.AddRider(riderConfig =>
                 {
-                    riderConfig.AddProducer<OrderCreated>(nameof(OrderCreated));
-                    riderConfig.AddProducer<OrderCompleted>(nameof(OrderCompleted));
+                    riderConfig.AddProducer<Guid, OrderCreated>(nameof(OrderCreated),
+                        (c, pc) =>
+                        {
+                            pc.SetValueSerializer(new AvroSerializer<OrderCreated>(schemaRegistryClient));
+                        });
+                    riderConfig.AddProducer<Guid, OrderCompleted>(nameof(OrderCompleted),
+                        (c, pc) =>
+                        {
+                            pc.SetValueSerializer(new AvroSerializer<OrderCompleted>(schemaRegistryClient));
+                        });
 
                     riderConfig.UsingKafka((_, kafkaConfig) =>
                     {

@@ -1,6 +1,9 @@
 ﻿using Amazon.SimpleNotificationService;
 using Amazon.SQS;
 using Confluent.Kafka;
+using Confluent.SchemaRegistry;
+using LetsGetChecked.Bus.Kafka.Configuration;
+using LetsGetChecked.Bus.Saga.Serialization;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
@@ -25,6 +28,15 @@ namespace MT.Saga.Outbox
         public void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddSingleton(c =>
+                {
+                    var schemaRegistry = new SchemaRegistryConfig
+                    {
+                        Url = "localhost:8081"
+                    };
+
+                    return new CachedSchemaRegistryClient(schemaRegistry);
+                })
                 .AddDbContext<OrderDbContext>(builder =>
                 {
                     builder.UseSqlServer(Configuration.GetConnectionString("SqlServerDbUs")!);
@@ -46,14 +58,6 @@ namespace MT.Saga.Outbox
                         o.UseBusOutbox();
                     });
 
-                    busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
-                        .EntityFrameworkRepository(r =>
-                        {
-                            r.ConcurrencyMode = ConcurrencyMode.Optimistic;
-                            r.ExistingDbContext<OrderDbContext>();
-                            r.UseSqlServer();
-                        });
-                    
                     busConfig.UsingAmazonSqs((context, amazonSqsConfig) =>
                     {
                         amazonSqsConfig.Host("eu-west-1", h =>
@@ -101,6 +105,13 @@ namespace MT.Saga.Outbox
                         {
                             kafkaConfig.Host(new List<string>() { "localhost:19092" });
 
+                            var cachedSchemaRegistryClient = riderContext.GetService<CachedSchemaRegistryClient>();
+
+                            if (cachedSchemaRegistryClient == null)
+                            {
+                                throw new InvalidOperationException("The schema registry client is not registered");
+                            }
+                            
                             kafkaConfig.TopicEndpoint<OrderCreated>(
                                 nameof(OrderCreated),
                                 "saga-orders",
@@ -108,6 +119,7 @@ namespace MT.Saga.Outbox
                                 {
                                     topicConfig.CreateIfMissing();
                                     topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                                    topicConfig.SetValueDeserializer(new AvroValueDeserializer<OrderCreated>(cachedSchemaRegistryClient));
                                     topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
                                 });
@@ -119,6 +131,7 @@ namespace MT.Saga.Outbox
                                 {
                                     topicConfig.CreateIfMissing();
                                     topicConfig.AutoOffsetReset = AutoOffsetReset.Earliest;
+                                    topicConfig.SetValueDeserializer(new AvroValueDeserializer<OrderCompleted>(cachedSchemaRegistryClient));
                                     topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
                                 });

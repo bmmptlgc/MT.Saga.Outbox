@@ -8,18 +8,17 @@ namespace MT.All.In.One.Service.Consumers;
 
 public class CompleteOrderConsumer : IConsumer<CompleteOrder>
 {
-    private readonly ITopicProducer<OrderCompleted> _orderCompletedProducer;
+    private readonly ITopicProducer<Guid, OrderCompleted> _orderCompletedProducer;
 
-    public CompleteOrderConsumer(ITopicProducer<OrderCompleted> orderCompletedProducer)
+    public CompleteOrderConsumer(ITopicProducer<Guid, OrderCompleted> orderCompletedProducer)
     {
         _orderCompletedProducer = orderCompletedProducer ?? throw new ArgumentException(nameof(orderCompletedProducer));
     }
 
     public async Task Consume(ConsumeContext<CompleteOrder> context)
     {
-        await _orderCompletedProducer.Produce(new
+        await _orderCompletedProducer.Produce(Guid.NewGuid(),new
         {
-            __MyMessageId = Guid.NewGuid(),
             OrderId = context.Message.OrderId
         });
     }

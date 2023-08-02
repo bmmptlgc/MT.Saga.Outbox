@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.1.0" />
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.1.0" />
     <PackageReference Include="MassTransit" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.2">
       <PrivateAssets>all</PrivateAssets>

@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.1.0" />
+    <PackageReference Include="Confluent.SchemaRegistry" Version="2.1.0" />
+    <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.1.0" />
     <PackageReference Include="MassTransit" Version="8.0.16" />
     <PackageReference Include="MassTransit.Abstractions" Version="8.0.16" />
     <PackageReference Include="MassTransit.AmazonSQS" Version="8.0.16" />
@@ -26,6 +28,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MT.Contracts\MT.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LetsGetChecked.Bus.Kafka">
+      <HintPath>..\..\..\LGC\Bus\src\Bus.Saga.SqlServer.DependencyInjection\bin\Debug\net6.0\LetsGetChecked.Bus.Kafka.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
