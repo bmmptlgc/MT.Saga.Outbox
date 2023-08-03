@@ -1,47 +1,46 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using LetsGetChecked.Bus.Kafka;
-using LetsGetChecked.Event;
+using MT.Contracts.Events;
 
-namespace LetsGetChecked.Bus.Saga.Serialization;
-
-public class AvroValueDeserializer<T> : IDeserializer<T>
-    where T : class, IVersionedIntegrationEvent
+namespace MT.Saga.Outbox.Serialization
 {
-    private readonly AvroValueDeserializer _lgcAvroValueDeserializer;
-
-    public AvroValueDeserializer(ISchemaRegistryClient schemaRegistry)
+    public class AvroValueDeserializer<T> : IDeserializer<T>
+        where T : class, IVersionedIntegrationEvent
     {
-        _lgcAvroValueDeserializer = new AvroValueDeserializer(schemaRegistry);
-    }
+        private readonly AvroValueDeserializer _lgcAvroValueDeserializer;
 
-    public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
-    {
-        if (data == null)
+        public AvroValueDeserializer(ISchemaRegistryClient schemaRegistry)
         {
-            throw new ArgumentNullException(nameof(data));
+            _lgcAvroValueDeserializer = new AvroValueDeserializer(schemaRegistry);
         }
 
-        if (context.Headers == null)
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context)
         {
-            throw new ArgumentNullException(nameof(context.Headers));
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (context.Headers == null)
+            {
+                throw new ArgumentNullException(nameof(context.Headers));
+            }
+
+            context.Headers.TryGet("Lgc-MessageType", out var typeName);
+
+            var messageType = Assembly.Load(typeof(T).Assembly.GetName())
+                .GetTypes()
+                .FirstOrDefault(t => t.Name == typeName.Split('.').Last());
+
+            if (messageType == null)
+            {
+                throw new TypeLoadException(
+                    $"Type {typeName} was not found in {typeof(T).Assembly.GetName()}. Check if definition of event exists or regenerate event classes using AvroGen tool.");
+            }
+
+            return (T)_lgcAvroValueDeserializer.DeserializeAsync(data.ToArray(), messageType).Result;
         }
-
-        context.Headers.TryGet("Lgc-MessageType", out var typeName);
-
-        var messageType = Assembly.Load(typeof(T).Assembly.GetName())
-            .GetTypes()
-            .FirstOrDefault(t => t.Name == typeName.Split('.').Last());
-
-        if (messageType == null)
-        {
-            throw new TypeLoadException(
-                $"Type {typeName} was not found in {typeof(T).Assembly.GetName()}. Check if definition of event exists or regenerate event classes using AvroGen tool.");
-        }
-
-        return (T)_lgcAvroValueDeserializer.DeserializeAsync(data.ToArray(), messageType).Result;
     }
 }

@@ -3,7 +3,6 @@ using Amazon.SQS;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
 using LetsGetChecked.Bus.Kafka.Configuration;
-using LetsGetChecked.Bus.Saga.Serialization;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
@@ -12,6 +11,7 @@ using MT.Contracts.Events.Order;
 using MT.Saga.Outbox.Domain;
 using MT.Saga.Outbox.Domain.Persistence;
 using MT.Saga.Outbox.Filters;
+using MT.Saga.Outbox.Serialization;
 using ClientConfig = Amazon.Runtime.ClientConfig;
 using RegionEndpoint = Amazon.RegionEndpoint;
 
