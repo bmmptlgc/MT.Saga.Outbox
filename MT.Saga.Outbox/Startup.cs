@@ -128,10 +128,10 @@ namespace MT.Saga.Outbox
                                     //{
                                     //    x.UseFilter(new KafkaErrorTransportFilter());
                                     //});
-                                    topicConfig.ConfigureDeadLetter(x =>
-                                    {
-                                        x.UseFilter(new KafkaDeadLetterTransportFilter());
-                                    });
+                                    //topicConfig.ConfigureDeadLetter(x =>
+                                    //{
+                                    //    x.UseFilter(new KafkaDeadLetterTransportFilter());
+                                    //});
                                 });
 
                             kafkaConfig.TopicEndpoint<OrderCompleted>(
