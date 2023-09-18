@@ -5,6 +5,7 @@ using Confluent.SchemaRegistry;
 using LetsGetChecked.Bus.Kafka;
 using LetsGetChecked.Bus.Kafka.Configuration;
 using MassTransit;
+using MassTransit.Middleware;
 using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
 using MT.Contracts.Commands.Product;
@@ -123,6 +124,14 @@ namespace MT.Saga.Outbox
                                     topicConfig.SetValueDeserializer(new AvroValueDeserializer<OrderCreated>(cachedSchemaRegistryClient));
                                     topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
+                                    //topicConfig.ConfigureError(x =>
+                                    //{
+                                    //    x.UseFilter(new KafkaErrorTransportFilter());
+                                    //});
+                                    topicConfig.ConfigureDeadLetter(x =>
+                                    {
+                                        x.UseFilter(new KafkaDeadLetterTransportFilter());
+                                    });
                                 });
 
                             kafkaConfig.TopicEndpoint<OrderCompleted>(
