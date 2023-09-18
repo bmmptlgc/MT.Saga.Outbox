@@ -2,6 +2,7 @@
 using Amazon.SQS;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
+using LetsGetChecked.Bus.Kafka;
 using LetsGetChecked.Bus.Kafka.Configuration;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -43,14 +44,6 @@ namespace MT.Saga.Outbox
                 })
                 .AddMassTransit(busConfig =>
                 {
-                    busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
-                        .EntityFrameworkRepository(r =>
-                        {
-                            r.ConcurrencyMode = ConcurrencyMode.Optimistic;
-                            r.ExistingDbContext<OrderDbContext>();
-                            r.UseSqlServer();
-                        });
-
                     busConfig.AddEntityFrameworkOutbox<OrderDbContext>(o =>
                     {
                         o.UseSqlServer();
@@ -58,6 +51,14 @@ namespace MT.Saga.Outbox
                         o.UseBusOutbox();
                     });
 
+                    busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
+                        .EntityFrameworkRepository(r =>
+                        {
+                            r.ConcurrencyMode = ConcurrencyMode.Optimistic;
+                            r.ExistingDbContext<OrderDbContext>();
+                            r.UseSqlServer();
+                        });
+                    
                     busConfig.UsingAmazonSqs((context, amazonSqsConfig) =>
                     {
                         amazonSqsConfig.Host("eu-west-1", h =>
