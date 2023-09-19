@@ -124,14 +124,14 @@ namespace MT.Saga.Outbox
                                     topicConfig.SetValueDeserializer(new AvroValueDeserializer<OrderCreated>(cachedSchemaRegistryClient));
                                     topicConfig.UseFilter(new MessageIdConsumeContextFilter());
                                     topicConfig.ConfigureSaga<OrderState>(riderContext);
-                                    //topicConfig.ConfigureError(x =>
-                                    //{
-                                    //    x.UseFilter(new KafkaErrorTransportFilter());
-                                    //});
-                                    //topicConfig.ConfigureDeadLetter(x =>
-                                    //{
-                                    //    x.UseFilter(new KafkaDeadLetterTransportFilter());
-                                    //});
+                                    topicConfig.ConfigureError(x =>
+                                    {
+                                        x.UseFilter(new KafkaErrorTransportFilter());
+                                    });
+                                    topicConfig.ConfigureDeadLetter(x =>
+                                    {
+                                        x.UseFilter(new KafkaDeadLetterTransportFilter<OrderCreated>());
+                                    });
                                 });
 
                             kafkaConfig.TopicEndpoint<OrderCompleted>(

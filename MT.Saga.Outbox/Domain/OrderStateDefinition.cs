@@ -25,7 +25,7 @@ namespace MT.Saga.Outbox.Domain
 
             endpointConfigurator.UseMessageRetry(r =>
             {
-                r.Ignore<InvalidOperationException>(e => e.Message.Equals("Lgc-MessageId header is required and must be a valid guid"));
+                r.Ignore<InvalidOperationException>(e => e.Message.Equals("Proprietary-MessageId header is required and must be a valid guid"));
                 
                 r.Intervals(20, 50, 100, 1000, 5000);
             });
