@@ -5,10 +5,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace MT.Saga.Outbox.Migrations
 {
-    /// <inheritdoc />
-    public partial class initialmigration : Migration
+    public partial class Iinitial : Migration
     {
-        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -40,7 +38,8 @@ namespace MT.Saga.Outbox.Migrations
                 {
                     CorrelationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CurrentState = table.Column<int>(type: "int", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    ExpirationTokenId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -129,7 +128,6 @@ namespace MT.Saga.Outbox.Migrations
                 column: "Created");
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

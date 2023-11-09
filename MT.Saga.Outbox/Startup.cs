@@ -2,10 +2,7 @@
 using Amazon.SQS;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
-using LetsGetChecked.Bus.Kafka;
-using LetsGetChecked.Bus.Kafka.Configuration;
 using MassTransit;
-using MassTransit.Middleware;
 using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
 using MT.Contracts.Commands.Product;
@@ -51,7 +48,7 @@ namespace MT.Saga.Outbox
 
                         o.UseBusOutbox();
                     });
-
+                    
                     busConfig.AddSagaStateMachine<OrderStateMachine, OrderState, OrderStateDefinition>()
                         .EntityFrameworkRepository(r =>
                         {

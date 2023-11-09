@@ -29,10 +29,4 @@
     <ProjectReference Include="..\MT.Contracts\MT.Contracts.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="LetsGetChecked.Bus.Kafka">
-      <HintPath>..\..\..\LGC\Bus\src\Bus.Saga.SqlServer.DependencyInjection\bin\Debug\net6.0\LetsGetChecked.Bus.Kafka.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>

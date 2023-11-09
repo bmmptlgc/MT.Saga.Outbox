@@ -10,6 +10,7 @@ namespace MT.Saga.Outbox.Domain
     {
         public Event<OrderCreated> OrderCreated { get; private set; }
         public Event<ProductSold> ProductSold { get; private set; }
+        public Event<OrderExpired> OrderExpired { get; private set; }
         public Event<OrderCompleted> OrderCompleted { get; private set; }
 
         public State Created { get; private set; }
@@ -21,6 +22,14 @@ namespace MT.Saga.Outbox.Domain
             Event(() => ProductSold, x => x.CorrelateById(m => m.Message.OrderId));
             Event(() => OrderCompleted, x => x.CorrelateById(m => m.Message.OrderId));
 
+            Event(() => OrderExpired, x => x
+                .CorrelateById(m => m.Message.OrderId));
+            
+            Schedule(
+                () => OrderExpirationSchedule,
+                x => x.ExpirationTokenId,
+                x => x.Delay = TimeSpan.FromSeconds(5));
+            
             InstanceState(x => x.CurrentState, Created, Sold);
             
             Initially(
@@ -54,9 +63,11 @@ namespace MT.Saga.Outbox.Domain
                             OrderId = context.Data.OrderId
                         });
                     })
+                    .Schedule(
+                        OrderExpirationSchedule, 
+                        context => context.Init<OrderExpired>(new { OrderId = context.Data.OrderId }))
                     .TransitionTo(Sold)
                 );
-
 
             During(Sold,
                 When(OrderCompleted)
@@ -64,10 +75,23 @@ namespace MT.Saga.Outbox.Domain
                     {
                         logger.LogInformation("Completed: {0}", context.Saga.CorrelationId);
                     })
+                    .Finalize(),
+                When(OrderExpired)
+                    .Then(context =>
+                    {
+                        logger.LogInformation("Expired: {0}", context.Saga.CorrelationId);
+                    })
                     .Finalize()
             );
 
             SetCompletedWhenFinalized();
         }
+        
+        public Schedule<OrderState, OrderExpired> OrderExpirationSchedule { get; set; }
+    }
+
+    public class OrderExpired
+    {
+        public Guid OrderId { get; set; }
     }
 }

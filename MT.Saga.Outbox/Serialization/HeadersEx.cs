@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Confluent.Kafka;
 
-namespace LetsGetChecked.Bus.Kafka
+namespace MT.Saga.Outbox.Serialization
 {
     internal static class HeadersEx
     {

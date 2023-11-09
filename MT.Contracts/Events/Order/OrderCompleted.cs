@@ -5,7 +5,7 @@ namespace MT.Contracts.Events.Order
 {
 	public partial class OrderCompleted : ISpecificRecord
 	{
-		public static Schema _SCHEMA = Avro.Schema.Parse(@"{""type"":""record"",""name"":""OrderCompleted"",""namespace"":""LetsGetChecked.Bus.Examples.Saga"",""fields"":[{""name"":""Id"",""doc"":""Event unique id"",""type"":{""type"":""string"",""logicalType"":""uuid""}},{""name"":""Source"",""doc"":""FQDN of the Aggregate producing this event"",""type"":""string""},{""name"":""SourceId"",""doc"":""Id of the Aggregate producing this event"",""type"":""string""},{""name"":""CreatedAt"",""doc"":""Event creation timestamp"",""type"":{""type"":""long"",""logicalType"":""timestamp-micros""}},{""name"":""Version"",""doc"":""Version of the aggregate that produced this event"",""type"":""long""},{""name"":""OrderId"",""doc"":""Id of the Order"",""type"":{""type"":""string"",""logicalType"":""uuid""}}]}");
+		public static Schema _SCHEMA = Avro.Schema.Parse(@"{""type"":""record"",""name"":""OrderCompleted"",""namespace"":""MT.Contracts.Events.Order"",""fields"":[{""name"":""Id"",""doc"":""Event unique id"",""type"":{""type"":""string"",""logicalType"":""uuid""}},{""name"":""Source"",""doc"":""FQDN of the Aggregate producing this event"",""type"":""string""},{""name"":""SourceId"",""doc"":""Id of the Aggregate producing this event"",""type"":""string""},{""name"":""CreatedAt"",""doc"":""Event creation timestamp"",""type"":{""type"":""long"",""logicalType"":""timestamp-micros""}},{""name"":""Version"",""doc"":""Version of the aggregate that produced this event"",""type"":""long""},{""name"":""OrderId"",""doc"":""Id of the Order"",""type"":{""type"":""string"",""logicalType"":""uuid""}}]}");
 		/// <summary>
 		/// Event unique id
 		/// </summary>
