@@ -37,7 +37,8 @@ namespace MT.All.In.One.Service.Producers
                     value,
                     Pipe.Execute<SendContext>(context =>
                     {
-                        context.Headers.Set("Lgc-MessageType", typeof(OrderCreated).FullName);
+                        context.Headers.Set("Proprietary-MessageType", typeof(OrderCreated).FullName);
+                        context.Headers.Set("Proprietary-MessageId", Guid.NewGuid());
                     }),
                     stoppingToken);
 
