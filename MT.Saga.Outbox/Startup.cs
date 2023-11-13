@@ -50,6 +50,8 @@ namespace MT.Saga.Outbox
                 .AddMassTransit(busConfig =>
                 {
                     busConfig.AddPublishMessageScheduler();
+
+                    busConfig.AddHangfireConsumers();
                     
                     busConfig.AddEntityFrameworkOutbox<OrderDbContext>(o =>
                     {
