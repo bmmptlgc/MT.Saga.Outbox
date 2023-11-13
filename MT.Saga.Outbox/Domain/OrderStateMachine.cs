@@ -64,8 +64,12 @@ namespace MT.Saga.Outbox.Domain
                         });
                     })
                     .Schedule(
-                        OrderExpirationSchedule, 
-                        context => context.Init<OrderExpired>(new { OrderId = context.Data.OrderId }))
+                        OrderExpirationSchedule,
+                        context =>
+                        {
+                            logger.LogInformation("Scheduler set: {0}", context.Saga.CorrelationId);
+                            return context.Init<OrderExpired>(new { context.Data.OrderId });
+                        })
                     .TransitionTo(Sold)
                 );
 

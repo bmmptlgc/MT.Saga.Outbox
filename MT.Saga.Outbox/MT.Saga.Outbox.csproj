@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="2.0.2" />
     <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="2.0.2" />
+    <PackageReference Include="Hangfire" Version="1.8.6" />
+    <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.0" />
     <PackageReference Include="MassTransit" Version="8.0.13" />
     <PackageReference Include="MassTransit.Abstractions" Version="8.0.13" />
     <PackageReference Include="MassTransit.AmazonSQS" Version="8.0.13" />

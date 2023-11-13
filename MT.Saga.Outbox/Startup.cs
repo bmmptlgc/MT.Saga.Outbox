@@ -2,6 +2,8 @@
 using Amazon.SQS;
 using Confluent.Kafka;
 using Confluent.SchemaRegistry;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using MT.Contracts.Commands.Order;
@@ -27,6 +29,11 @@ namespace MT.Saga.Outbox
         public void ConfigureServices(IServiceCollection services)
         {
             services
+                .AddHangfire(h =>
+                {
+                    h.UseRecommendedSerializerSettings();
+                    h.UseMemoryStorage();
+                })
                 .AddSingleton(c =>
                 {
                     var schemaRegistry = new SchemaRegistryConfig
@@ -42,6 +49,8 @@ namespace MT.Saga.Outbox
                 })
                 .AddMassTransit(busConfig =>
                 {
+                    busConfig.AddPublishMessageScheduler();
+                    
                     busConfig.AddEntityFrameworkOutbox<OrderDbContext>(o =>
                     {
                         o.UseSqlServer();
@@ -59,6 +68,8 @@ namespace MT.Saga.Outbox
                     
                     busConfig.UsingAmazonSqs((context, amazonSqsConfig) =>
                     {
+                        amazonSqsConfig.UsePublishMessageScheduler();
+                        
                         amazonSqsConfig.Host("eu-west-1", h =>
                         {
                             var regionEndpoint = RegionEndpoint.GetBySystemName("eu-west-1");
