@@ -8,6 +8,7 @@ public class SellProductConsumer : IConsumer<SellProduct>
 {
     public async Task Consume(ConsumeContext<SellProduct> context)
     {
+        await Task.Delay(10000);
         await context.Publish<ProductSold>(new
         {
             __MyMessageId = Guid.NewGuid(),

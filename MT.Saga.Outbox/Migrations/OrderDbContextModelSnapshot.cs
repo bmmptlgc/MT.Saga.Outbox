@@ -198,7 +198,10 @@ namespace MT.Saga.Outbox.Migrations
                     b.Property<int>("CurrentState")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ExpirationTokenId")
+                    b.Property<Guid?>("ExpirationToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ProductSaleExpirationToken")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("RowVersion")

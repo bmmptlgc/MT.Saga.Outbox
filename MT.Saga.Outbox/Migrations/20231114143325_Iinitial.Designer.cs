@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MT.Saga.Outbox.Migrations
 {
     [DbContext(typeof(OrderDbContext))]
-    [Migration("20231109132851_Iinitial")]
+    [Migration("20231114143325_Iinitial")]
     partial class Iinitial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -200,7 +200,10 @@ namespace MT.Saga.Outbox.Migrations
                     b.Property<int>("CurrentState")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ExpirationTokenId")
+                    b.Property<Guid?>("ExpirationToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ProductSaleExpirationToken")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("RowVersion")

@@ -10,8 +10,10 @@ namespace MT.Saga.Outbox.Domain
     {
         public Event<OrderCreated> OrderCreated { get; private set; }
         public Event<ProductSold> ProductSold { get; private set; }
-        public Event<OrderExpired> OrderExpired { get; private set; }
         public Event<OrderCompleted> OrderCompleted { get; private set; }
+
+        public Event<OrderExpired> OrderExpired { get; private set; }
+        public Event<ProductFailedToSell> ProductFailedToSell{ get; private set; }
 
         public State Created { get; private set; }
         public State Sold { get; private set; }
@@ -25,9 +27,17 @@ namespace MT.Saga.Outbox.Domain
             Event(() => OrderExpired, x => x
                 .CorrelateById(m => m.Message.OrderId));
             
+            Event(() => ProductFailedToSell, x => x
+                .CorrelateById(m => m.Message.OrderId));
+
             Schedule(
                 () => OrderExpirationSchedule,
-                x => x.ExpirationTokenId,
+                x => x.ExpirationToken,
+                x => x.Delay = TimeSpan.FromSeconds(5));
+            
+            Schedule(
+                () => ProductSaleExpirationSchedule,
+                x => x.ProductSaleExpirationToken,
                 x => x.Delay = TimeSpan.FromSeconds(5));
             
             InstanceState(x => x.CurrentState, Created, Sold);
@@ -47,9 +57,16 @@ namespace MT.Saga.Outbox.Domain
                             Quantity = context.Data.Quantity
                         });
                     })
+                    .Schedule(
+                        ProductSaleExpirationSchedule,
+                        context =>
+                        {
+                            logger.LogInformation("Product sale scheduler set: {0}", context.Saga.CorrelationId);
+                            return context.Init<ProductFailedToSell>(new { context.Data.OrderId });
+                        })
                     .TransitionTo(Created)
                 );
-
+            
             During(Created,
                 When(ProductSold)
                     .Then(context =>
@@ -70,7 +87,13 @@ namespace MT.Saga.Outbox.Domain
                             logger.LogInformation("Scheduler set: {0}", context.Saga.CorrelationId);
                             return context.Init<OrderExpired>(new { context.Data.OrderId });
                         })
-                    .TransitionTo(Sold)
+                    .TransitionTo(Sold),
+                    When(ProductFailedToSell)
+                        .Then(context =>
+                        {
+                            logger.LogInformation("Product failed to sell: {0}", context.Saga.CorrelationId);
+                        })
+                        .Finalize()
                 );
 
             During(Sold,
@@ -92,6 +115,12 @@ namespace MT.Saga.Outbox.Domain
         }
         
         public Schedule<OrderState, OrderExpired> OrderExpirationSchedule { get; set; }
+        public Schedule<OrderState, ProductFailedToSell> ProductSaleExpirationSchedule { get; set; }
+    }
+
+    public class ProductFailedToSell
+    {
+        public Guid OrderId { get; set; }
     }
 
     public class OrderExpired

@@ -39,7 +39,8 @@ namespace MT.Saga.Outbox.Migrations
                     CorrelationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CurrentState = table.Column<int>(type: "int", nullable: false),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
-                    ExpirationTokenId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ExpirationToken = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ProductSaleExpirationToken = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {

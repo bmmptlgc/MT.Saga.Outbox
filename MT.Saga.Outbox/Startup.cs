@@ -29,11 +29,12 @@ namespace MT.Saga.Outbox
         public void ConfigureServices(IServiceCollection services)
         {
             services
-                .AddHangfire(h =>
-                {
-                    h.UseRecommendedSerializerSettings();
-                    h.UseMemoryStorage();
-                })
+                // .AddHangfireServer()
+                // .AddHangfire(h =>
+                // {
+                    // h.UseRecommendedSerializerSettings();
+                    // h.UseMemoryStorage();
+                // })
                 .AddSingleton(c =>
                 {
                     var schemaRegistry = new SchemaRegistryConfig
@@ -49,9 +50,10 @@ namespace MT.Saga.Outbox
                 })
                 .AddMassTransit(busConfig =>
                 {
-                    busConfig.AddPublishMessageScheduler();
+                    busConfig.AddDelayedMessageScheduler();
+                    // busConfig.AddPublishMessageScheduler();
 
-                    busConfig.AddHangfireConsumers();
+                    // busConfig.AddHangfireConsumers();
                     
                     busConfig.AddEntityFrameworkOutbox<OrderDbContext>(o =>
                     {
@@ -70,8 +72,6 @@ namespace MT.Saga.Outbox
                     
                     busConfig.UsingAmazonSqs((context, amazonSqsConfig) =>
                     {
-                        amazonSqsConfig.UsePublishMessageScheduler();
-                        
                         amazonSqsConfig.Host("eu-west-1", h =>
                         {
                             var regionEndpoint = RegionEndpoint.GetBySystemName("eu-west-1");
@@ -82,6 +82,12 @@ namespace MT.Saga.Outbox
                             h.SecretKey("test");
                         });
 
+                        amazonSqsConfig.UseDelayedMessageScheduler();
+
+                        // amazonSqsConfig.UsePublishMessageScheduler();
+                        
+                        // amazonSqsConfig.UseHangfireScheduler();
+                        
                         EndpointConvention.Map<SellProduct>(new Uri("amazonsqs://eu-west-1/product-commands",
                             UriKind.Absolute));
                         EndpointConvention.Map<CompleteOrder>(new Uri("amazonsqs://eu-west-1/order-commands",

@@ -1,5 +1,6 @@
 using MassTransit.Internals;
 using Serilog;
+using Serilog.Events;
 
 namespace MT.Saga.Outbox
 {
@@ -24,8 +25,13 @@ namespace MT.Saga.Outbox
                 })
                 .UseSerilog((host, log) =>
                 {
-                    log.MinimumLevel.Debug();
-                    log.WriteTo.Console();
+                    log
+                        .MinimumLevel.Verbose()
+                        .MinimumLevel.Debug()
+                        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                        .MinimumLevel.Override("MassTransit.EntityFrameworkCoreIntegration", LogEventLevel.Warning)
+                        .Enrich.FromLogContext()
+                        .WriteTo.Console();
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
