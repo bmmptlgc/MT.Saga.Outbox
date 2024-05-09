@@ -101,15 +101,18 @@ services:
         - mssql:/var/opt/mssql
 
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:latest
     ports:
-      - '4566-4597:4566-4597'
-    environment:
-      - DEFAULT_REGION=eu-west-1
-      - SERVICES=sqs, nsn
-      - DATA_DIR=/tmp/localstack/data
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+      # - '4566-4597:4566-4597'
+    # environment:
+      # - DEFAULT_REGION=eu-west-1
+      # - SERVICES=sqs,sns,s3
+      # - DATA_DIR=/tmp/localstack/data
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "/tmp/localstack/data:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
   aws_cli:
     image: amazon/aws-cli
@@ -132,7 +135,7 @@ services:
       
       COUNTER=$$((COUNTER-1)); 
       echo "Service is not ready yet! $$COUNTER retries left."; 
-      sleep 3; 
+      sleep 5; 
       done; 
       echo backend is up;
 

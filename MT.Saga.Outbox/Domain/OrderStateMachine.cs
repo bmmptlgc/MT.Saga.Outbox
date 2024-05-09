@@ -32,7 +32,7 @@ namespace MT.Saga.Outbox.Domain
 
             Schedule(
                 () => OrderExpirationSchedule,
-                x => x.ExpirationToken,
+                x => x.OrderExpirationToken,
                 x => x.Delay = TimeSpan.FromSeconds(5));
             
             Schedule(
@@ -50,6 +50,7 @@ namespace MT.Saga.Outbox.Domain
                     })
                     .SendAsync(context =>
                     {
+                        logger.LogInformation("Send SellProduct command: {0}", context.Saga.CorrelationId);
                         return context.Init<SellProduct>(new
                         {
                             OrderId = context.Data.OrderId,
@@ -61,7 +62,7 @@ namespace MT.Saga.Outbox.Domain
                         ProductSaleExpirationSchedule,
                         context =>
                         {
-                            logger.LogInformation("Product sale scheduler set: {0}", context.Saga.CorrelationId);
+                            logger.LogInformation("Product sale scheduler set for 5 seconds: {0}", context.Saga.CorrelationId);
                             return context.Init<ProductFailedToSell>(new { context.Data.OrderId });
                         })
                     .TransitionTo(Created)
@@ -80,20 +81,20 @@ namespace MT.Saga.Outbox.Domain
                             OrderId = context.Data.OrderId
                         });
                     })
-                    .Schedule(
-                        OrderExpirationSchedule,
-                        context =>
-                        {
-                            logger.LogInformation("Scheduler set: {0}", context.Saga.CorrelationId);
-                            return context.Init<OrderExpired>(new { context.Data.OrderId });
-                        })
+                    //.Schedule(
+                    //    OrderExpirationSchedule,
+                    //    context =>
+                    //    {
+                    //        logger.LogInformation("Order expired Scheduler set for 5 seconds: {0}", context.Saga.CorrelationId);
+                    //        return context.Init<OrderExpired>(new { context.Data.OrderId });
+                    //    })
                     .TransitionTo(Sold),
-                    When(ProductFailedToSell)
-                        .Then(context =>
-                        {
-                            logger.LogInformation("Product failed to sell: {0}", context.Saga.CorrelationId);
-                        })
-                        .Finalize()
+                When(ProductFailedToSell)
+                    .Then(context =>
+                    {
+                        logger.LogInformation("Product failed to sell: {0}", context.Saga.CorrelationId);
+                    })
+                    .Finalize()
                 );
 
             During(Sold,
@@ -107,6 +108,12 @@ namespace MT.Saga.Outbox.Domain
                     .Then(context =>
                     {
                         logger.LogInformation("Expired: {0}", context.Saga.CorrelationId);
+                    })
+                    .Finalize(),
+                When(ProductFailedToSell)
+                    .Then(context =>
+                    {
+                        logger.LogInformation("Product failed to sell: {0}", context.Saga.CorrelationId);
                     })
                     .Finalize()
             );

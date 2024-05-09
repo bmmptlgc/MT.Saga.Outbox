@@ -107,6 +107,11 @@ namespace MT.Saga.Outbox
 
                             e.ConfigureSaga<OrderState>(context);
                         });
+                        
+                        //amazonSqsConfig.ReceiveEndpoint("OrderCreated", e =>
+                        //{
+                        //    e.ConfigureSaga<OrderState>(context);
+                        //});
                     });
 
                     busConfig.AddRider(riderConfig =>

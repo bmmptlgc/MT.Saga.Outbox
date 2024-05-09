@@ -22,6 +22,7 @@ namespace MT.Saga.Outbox.Domain
             sagaConfigurator.Message<OrderCreated>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
             sagaConfigurator.Message<ProductSold>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
             sagaConfigurator.Message<OrderCompleted>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
+            sagaConfigurator.Message<ProductFailedToSell>(x => x.UsePartitioner(_partition, m => m.Message.OrderId));
 
             endpointConfigurator.UseMessageRetry(r =>
             {
